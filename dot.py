@@ -1,14 +1,23 @@
 import math
+import random
 
 
 class Dot:
-    def __init__(self, theta, phi):
-        self.theta = theta
-        self.phi = phi
-        
+    def __init__(self, theta=None, phi=None):
+        if theta and phi:
+            self.theta = theta
+            self.phi = phi
+        else:
+            self.theta = 2 * math.pi * random.random()
+            self.phi = math.acos(2 * random.random() - 1)
 
-def distance(dot1: Dot, dot2: Dot):  # 곡면에서 두 점을 잇는 최단 경로
-    return math.acos(
-        math.cos(dot1.theta) * math.cos(dot2.theta) + math.sin(dot1.theta) * math.sin(dot2.theta) * math.cos(
-            dot1.phi - dot2.phi))
+    def __sub__(self, other):
+        return math.acos(
+            math.cos(self.theta) * math.cos(other.theta) + math.sin(self.theta) * math.sin(other.theta) * math.cos(
+                self.phi - other.phi))
 
+    def __eq__(self, other):
+        return self.theta == other.theta and self.phi == other.phi
+
+    def __ne__(self, other):
+        return self.theta != other.theta or self.phi != other.phi
