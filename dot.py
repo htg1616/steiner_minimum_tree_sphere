@@ -21,3 +21,7 @@ class Dot:
 
     def __ne__(self, other):
         return self.theta != other.theta or self.phi != other.phi
+
+    def angle(self, other1, other2):
+        #(self, other1)과 (self, other2)가 이루는 각 반환
+        return math.acos(math.cos(other1-other2) - math.cos(other1-self) * math.cos(other2-self)) / (math.sin(other1-self)*math.sin(other2-self))
