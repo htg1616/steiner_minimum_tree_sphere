@@ -4,11 +4,11 @@ import random
 
 class Dot:
     def __init__(self, theta=None, phi=None):
-        if theta and phi:
+        if theta != None and phi != None:
             self.theta = theta
             self.phi = phi
         else:
-            self.theta = 2 * math.pi * random.random()
+            self.theta = 2 * math.PI * random.random()
             self.phi = math.acos(2 * random.random() - 1)
 
     def __sub__(self, other):

@@ -1,4 +1,3 @@
-from contributed.sumopy.agilepy.lib_wx.test_glcanvas import vertices
 from dot import *
 import copy
 
@@ -38,7 +37,7 @@ class MinimalSpanningTree:
         self.mst_edges = []
         parent = [i for i in range(len(self.vertices))]
         #크루스칼 알고리즘
-        self.edges.sort(key=lambda x: vertices[x[1]] - vertices[x[0]])
+        self.edges.sort(key=lambda x: self.vertices[x[1]] - self.vertices[x[0]])
         for a, b in self.edges:
             if find(a) != find(b):
                 self.mst_adj_list[a].append(b)
@@ -50,7 +49,7 @@ class MinimalSpanningTree:
     def length(self):
         length = 0
         for a, b in self.mst_edges:
-            length += vertices[a] - vertices[b]
+            length += self.vertices[a] - self.vertices[b]
         return length / 2
 
 #MinimalSpanningTree를 상속받은 steinertree class
@@ -71,7 +70,7 @@ class SteinerTree(MinimalSpanningTree):
         point_y = self.vertices[y]
 
         min_point_index = None
-        min_angel = 2 * math.pi #각도 최솟값을 2pi로 초기화
+        min_angel = 2 * math.PI #각도 최솟값을 2PI로 초기화
         #y의 모든 인접점에 대해  최소각을 가지는 z를 찾음
         for z in self.si_adj_list[point_y]:
             point = self.si_vertices[z]
@@ -94,7 +93,7 @@ class SteinerTree(MinimalSpanningTree):
             point_z = self.si_vertices[z]
 
             #z가 존재하고, x, y, z가 이루는 각이 120도보다 작으면 steiner point를 추가
-            if not z and point_y.angle(point_x, point_z) < math.pi * 2 / 3:
+            if not z and point_y.angle(point_x, point_z) < math.PI * 2 / 3:
                 #기존 간선 제거
                 self.si_adj_list[x].remove(y)
                 self.si_adj_list[y].remove(x)
