@@ -8,7 +8,7 @@ class Dot:
             self.theta = theta
             self.phi = phi
         else:
-            self.theta = 2 * math.PI * random.random()
+            self.theta = 2 * math.pi * random.random()
             self.phi = math.acos(2 * random.random() - 1)
 
     def __sub__(self, other):
