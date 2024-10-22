@@ -55,7 +55,7 @@ class SteinerTree:
     def __init__(self, vertices: list[Dot], mst_adj_list: list[list[int]]):
         self.vertices = vertices
         self.total_vertices = vertices[:]  # SteinerTree의 좌표들 앞부분은 fixed points의 좌표, 뒷부분은 steiner points의 좌표
-        self.adj_list = copy.deepcopy(mst_adj_list) # SteinerTree의 인접리스트, total_vertices의 인덱스로 구성됨, 기존 mst 간접 리스트 복사하여 초기화
+        self.adj_list = copy.deepcopy(mst_adj_list)  # SteinerTree의 인접리스트, total_vertices의 인덱스로 구성됨, 기존 mst 간접 리스트 복사하여 초기화
         self.mst_edges = [(x, y) for x in range(len(mst_adj_list)) for y in mst_adj_list[x]]
 
         self.steiner_insertion()
@@ -71,7 +71,8 @@ class SteinerTree:
         # y의 모든 인접점에 대해  최소각을 가지는 z를 찾음
         for z in self.adj_list[y]:
             point_z = self.total_vertices[z]
-            if z != x and point_y.angle(point_x, point_z) < min_angel:
+            if (z != x and self.total_vertices[y] != self.total_vertices[z] and
+                    point_y.angle(point_x, point_z) < min_angel):
                 min_angel = point_y.angle(point_x, point_z)
                 min_point_index = z
         return min_point_index
@@ -80,6 +81,7 @@ class SteinerTree:
         # steiner insertion 알고리즘
 
         for x, y in self.mst_edges:  # 모든 mst 간선에 대해 반복
+            if x not in self.adj_list[y]: continue
             point_x = self.total_vertices[x]
             point_y = self.total_vertices[y]
             z = self.find_min_angle_point(x, y)  # x,y 각도가 작은 각을 이루는 z찾기
@@ -94,13 +96,17 @@ class SteinerTree:
                     self.adj_list[y].remove(z)
                     self.adj_list[z].remove(y)
 
-                    # 새로운 steiner point를 y를 복사하여 만든후 간선 연결
-                    s_index = len(self.total_vertices)
-                    s = copy.copy(point_y)
-                    self.total_vertices.append(s)
-                    self.adj_list[x].append(s_index)
-                    self.adj_list[y].append(s_index)
-                    self.adj_list[z].append(s_index)
+                    # 새로운 steiner point인 point_s를 y를 복사하여 만듬
+                    s = len(self.total_vertices)
+                    point_s = copy.copy(point_y)
+                    self.total_vertices.append(point_s)
+
+                    #새로운 steiner point인 point_s와 x, y, z를 연결
+                    self.adj_list[x].append(s)
+                    self.adj_list[y].append(s)
+                    self.adj_list[z].append(s)
+                    self.adj_list.append([x, y, z])
+
 
 class LocalOptimizedGraph:
     def __init__(self, vertices: list[Dot], si_vertices: list[Dot], adj_list: list[list[int]]):
@@ -126,9 +132,8 @@ class LocalOptimizedGraph:
         phi2 = u_vertex.phi
         grad_theta = (-(-math.sin(theta1) * math.cos(theta2) + math.cos(theta1) * math.sin(theta2) * math.cos(
             phi2 - phi1)) /
-                      math.sqrt(1 - (
-                                  math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
-                              phi2 - phi1)) ** 2))
+                      math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
+                          phi2 - phi1)) ** 2))
         grad_phi = (-(math.sin(theta1) * math.sin(theta2) * math.sin(phi2 - phi1)) /
                     math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
                         phi2 - phi1)) ** 2))
