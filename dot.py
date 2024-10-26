@@ -2,31 +2,41 @@ import math
 import random
 import copy
 
-
 class Dot:
     def __init__(self, theta=None, phi=None):
         if theta is not None and phi is not None:
             self.theta = theta
             self.phi = phi
         else:
-            self.theta = 2 * math.pi * random.random()
-            self.phi = math.acos(2 * random.random() - 1)
+            self.theta = math.acos(2 * random.random() - 1) + math.pi/2
+            self.phi = 2 * math.pi * random.random()
 
     def __sub__(self, other):
-        return math.acos(
-            math.cos(self.theta) * math.cos(other.theta) + math.sin(self.theta) * math.sin(other.theta) * math.cos(
-                self.phi - other.phi))
+        cos_distance = (
+                math.cos(self.theta) * math.cos(other.theta) +
+                math.sin(self.theta) * math.sin(other.theta) * math.cos(self.phi - other.phi)
+        )
+
+        cos_distance = min(1.0, max(-1.0, cos_distance))
+        return math.acos(cos_distance)
 
     def __eq__(self, other):  # 실수인데 부동소수점고려 해야함. ㅈ같네
-        return self.theta == other.theta and self.phi == other.phi
+        epsilon = 1e-5
+        return self - other < epsilon
 
     def __ne__(self, other):
-        return self.theta != other.theta or self.phi != other.phi
+        epsilon = 1e-5
+        return self - other >= epsilon
 
     def __copy__(self):
         return Dot(theta=self.theta, phi=self.phi)
 
     def angle(self, other1, other2):
         # (self, other1)과 (self, other2)가 이루는 각 반환
-        return math.acos(math.cos(other1 - other2) - math.cos(other1 - self) * math.cos(other2 - self)) / (
-                    math.sin(other1 - self) * math.sin(other2 - self))
+        a = self - other1
+        b = self - other2
+        c = other1 - other2
+
+        cos_angle = (math.cos(c) - math.cos(a) * math.cos(b)) / (math.sin(a) * math.sin(b))
+        cos_angle = min(1.0, max(-1.0, cos_angle))
+        return math.acos(cos_angle)
