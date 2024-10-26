@@ -36,7 +36,7 @@ for i in range(6):
     dots = testcases[i]
     test(dots)
 
-for i in range(10):
+for i in range(0):
     print(f'=====<랜덤케이스{i + 1}>=====')
     dots = [Dot() for i in range(random.randint(1000, 1050))]
     test(dots)

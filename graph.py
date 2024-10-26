@@ -139,7 +139,7 @@ class LocalOptimizedGraph:
         grad_theta = (-(-math.sin(theta1) * math.cos(theta2) + math.cos(theta1) * math.sin(theta2) * math.cos(
             phi2 - phi1)) /
                       math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
-                          phi2 - phi1)) ** 2)) #todo: testcase2에 의해 zero division error 발생
+                          phi2 - phi1)) ** 2))
         grad_phi = (-(math.sin(theta1) * math.sin(theta2) * math.sin(phi2 - phi1)) /
                     math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
                         phi2 - phi1)) ** 2))
@@ -154,14 +154,15 @@ class LocalOptimizedGraph:
         """
         # theta, phi에 대한 그래디언트 값을 저장할 값이 0인 numpy_array 생성
         n = len(self.vertices)
-        grad_theta = np.zeros(n) #todo: 요게 맞나?
-        grad_phi = np.zeros(n)
+        m = len(self.si_vertices)
+        grad_theta = np.zeros(m)
+        grad_phi = np.zeros(m)
 
         # 각 정점에 대해 그래디언트 계산
-        for v in range(n):
-            point_v = self.opt_si_vertices[n+v]
-            for u in self.adj_list[v]:
-                point_u = self.vertices[u] if u < n else self.opt_si_vertices[u-n] #todo: 이거 맞음?
+        for v in range(m):
+            point_v = self.opt_si_vertices[v]
+            for u in self.adj_list[n + v]:
+                point_u = self.vertices[u] if u < n else self.opt_si_vertices[u - n]
 
                 # 그래디언트를 계산
                 grad_theta_v, grad_phi_v = self.great_circle_gradient(point_v, point_u)
@@ -176,10 +177,10 @@ class LocalOptimizedGraph:
         learning_rate = 0.001
         beta1 = 0.9
         beta2 = 0.999
-        epsilon = 1e-8
-        num_iterations = 1000  # 반복 횟수
+        epsilon = 1e-3
+        num_iterations = 10000  # 반복 횟수
 
-        #todo: zero_division_error 방지하기 위해 모든 점들 epsilon만큼 움직이기
+        #zero_division_error 방지하기 위해 모든 점들 epsilon만큼 움직이기
         for si_point in self.opt_si_vertices:
             si_point.theta += epsilon
             si_point.phi += epsilon
@@ -214,10 +215,6 @@ class LocalOptimizedGraph:
             si_theta -= learning_rate * m_hat_theta / (np.sqrt(v_hat_theta) + epsilon)
             si_phi -= learning_rate * m_hat_phi / (np.sqrt(v_hat_phi) + epsilon)
             self.opt_si_vertices = [Dot(theta, phi) for theta, phi in zip(si_theta, si_phi)]
-
-            # θ와 φ의 범위를 보정 #todo: 없어도 되지 않을까? 임시 비활성화 해둠
-            #self.si_theta = np.clip(self.si_theta, 0, np.pi)
-            #self.si_phi = np.mod(self.si_phi, 2 * np.pi)
 
             # 진행 상황 출력 (선택 사항)
             if t % 100 == 0 or t == 1:
