@@ -19,6 +19,7 @@ def test(dots):
     print()
 
     opt_smt_test = LocalOptimizedGraph(smt_test.vertices, smt_test.si_vertices, smt_test.adj_list)
+    result = opt_smt_test.optimze()
     print("OPT_SMT 길이", opt_smt_test.length())
 
 
@@ -30,13 +31,15 @@ testcases = [[Dot(PI / 6, 2 * PI), Dot(PI / 6, 2 * PI / 3), Dot(PI / 6, 4 * PI /
               Dot(PI / 6, -PI / 6)],
              [Dot(PI / 2, 0), Dot(0, 0), Dot(0, PI / 2)]
              ]
+
+
 for i in range(6):
     print()
     print(f'=====<테스트케이스{i + 1}>=====')
     dots = testcases[i]
     test(dots)
 
-for i in range(0):
+for i in range(1):
     print(f'=====<랜덤케이스{i + 1}>=====')
     dots = [Dot() for i in range(random.randint(1000, 1050))]
     test(dots)

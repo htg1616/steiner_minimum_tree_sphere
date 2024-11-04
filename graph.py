@@ -120,8 +120,6 @@ class LocalOptimizedGraph:
         self.opt_si_vertices = copy.deepcopy(si_vertices)
         self.adj_list = adj_list
 
-        self.optimze()
-
     @staticmethod
     def great_circle_gradient(point_v: Dot, point_u: Dot) -> tuple[float, float]:
         """
@@ -173,12 +171,13 @@ class LocalOptimizedGraph:
 
         return grad_theta, grad_phi
 
-    def optimze(self) -> None:
+    def optimze(self, num_iterations = None) -> list[float]:
         learning_rate = 0.001
         beta1 = 0.9
         beta2 = 0.999
         epsilon = 1e-3
-        num_iterations = 10000  # 반복 횟수
+        if num_iterations is None:
+            num_iterations = 1000
 
         #zero_division_error 방지하기 위해 모든 점들 epsilon만큼 움직이기
         for si_point in self.opt_si_vertices:
@@ -192,6 +191,8 @@ class LocalOptimizedGraph:
         m_phi = np.zeros_like(si_phi)
         v_theta = np.zeros_like(si_theta)
         v_phi = np.zeros_like(si_phi)
+
+        results = []
 
         for t in range(1, num_iterations + 1):
             # 그래디언트 계산
@@ -216,10 +217,9 @@ class LocalOptimizedGraph:
             si_phi -= learning_rate * m_hat_phi / (np.sqrt(v_hat_phi) + epsilon)
             self.opt_si_vertices = [Dot(theta, phi) for theta, phi in zip(si_theta, si_phi)]
 
-            # 진행 상황 출력 (선택 사항)
-            if t % 100 == 0 or t == 1:
-                current_length = self.length()
-                print(f"Iteration {t}, Total Length: {current_length}")
+            results.append(self.length())
+
+        return results
 
     def length(self) -> float:
         total_vertices = self.vertices + self.opt_si_vertices
