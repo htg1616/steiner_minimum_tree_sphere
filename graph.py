@@ -130,17 +130,23 @@ class LocalOptimizedGraph:
         :param point_u: The other Dot instance.
         :return: Tuple of partial derivatives (dL/dtheta_v, dL/dphi_v).
         """
+        epsilon = 1e-8
         theta1 = point_v.theta
         phi1 = point_v.phi
         theta2 = point_u.theta
         phi2 = point_u.phi
-        grad_theta = (-(-math.sin(theta1) * math.cos(theta2) + math.cos(theta1) * math.sin(theta2) * math.cos(
-            phi2 - phi1)) /
-                      math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
-                          phi2 - phi1)) ** 2))
-        grad_phi = (-(math.sin(theta1) * math.sin(theta2) * math.sin(phi2 - phi1)) /
-                    math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(
-                        phi2 - phi1)) ** 2))
+
+        theta_numerator = -(-math.sin(theta1) * math.cos(theta2) + math.cos(theta1) * math.sin(theta2) * math.cos(phi2 - phi1))
+        theta_denominator = math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(phi2 - phi1)) ** 2)
+        if 0 <= theta_denominator < epsilon: theta_denominator += epsilon
+        elif -epsilon < theta_denominator < 0: theta_denominator -= epsilon
+        grad_theta = theta_numerator / theta_denominator
+
+        phi_numerator = -(math.sin(theta1) * math.sin(theta2) * math.sin(phi2 - phi1))
+        phi_denominator = math.sqrt(1 - (math.cos(theta1) * math.cos(theta2) + math.sin(theta1) * math.sin(theta2) * math.cos(phi2 - phi1)) ** 2)
+        if 0 <= phi_denominator < epsilon: phi_denominator += epsilon
+        elif -epsilon < phi_denominator < 0: phi_denominator -= epsilon
+        grad_phi = phi_numerator / phi_denominator
         return grad_theta, grad_phi
 
     def compute_gradient(self):
