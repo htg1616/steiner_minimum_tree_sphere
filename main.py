@@ -32,7 +32,6 @@ testcases = [[Dot(PI / 6, 2 * PI), Dot(PI / 6, 2 * PI / 3), Dot(PI / 6, 4 * PI /
              [Dot(PI / 2, 0), Dot(0, 0), Dot(0, PI / 2)]
              ]
 
-
 for i in range(6):
     print()
     print(f'=====<테스트케이스{i + 1}>=====')

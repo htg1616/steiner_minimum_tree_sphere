@@ -52,12 +52,12 @@ class MinimalSpanningTree:
 
 # MinimalSpanningTree를 이용하여 steinertree 생성
 class SteinerTree:
-    def __init__(self, vertices: list[Dot], mst_adj_list: list[list[int]]):
+    def __init__(self, vertices: list[Dot], mst_adj_list: list[list[int]], si_option: bool):
         self.vertices = vertices
         self.total_vertices = vertices[:]  # SteinerTree의 좌표들 앞부분은 fixed points의 좌표, 뒷부분은 steiner points의 좌표
         self.adj_list = copy.deepcopy(mst_adj_list)  # SteinerTree의 인접리스트, total_vertices의 인덱스로 구성됨, 기존 mst 간접 리스트 복사하여 초기화
 
-        self.steiner_insertion()
+        self.steiner_insertion(si_option)
         self.si_vertices = self.total_vertices[len(self.vertices):]
 
     def find_min_angle_point(self, x, y):
@@ -75,8 +75,9 @@ class SteinerTree:
                 min_point_index = z
         return min_point_index
 
-    def steiner_insertion(self):
+    def steiner_insertion(self, si_option):
         # steiner insertion 알고리즘
+        #si_option이 true면 사영법 이용하여 삽입, false면 y 위치에 점 삽입
         mst_edges = [(x, y) for x in range(len(self.adj_list)) for y in self.adj_list[x]]
         for x, y in mst_edges:  # 모든 mst 간선에 대해 반복
             if x not in self.adj_list[y]: continue
@@ -96,7 +97,11 @@ class SteinerTree:
 
                     # 새로운 steiner point인 point_s를 y를 복사하여 만듬
                     s = len(self.total_vertices)
-                    point_s = copy.copy(point_y)
+
+                    if si_option:
+                        point_s = find_projected_fermat_on_sphere(point_x, point_y, point_z)
+                    else:
+                        point_s = copy.copy(point_y)
                     self.total_vertices.append(point_s)
 
                     #새로운 steiner point인 point_s와 x, y, z를 연결
@@ -198,7 +203,7 @@ class LocalOptimizedGraph:
         v_theta = np.zeros_like(si_theta)
         v_phi = np.zeros_like(si_phi)
 
-        results = []
+        results = [self.length()]
 
         for t in range(1, num_iterations + 1):
             # 그래디언트 계산
