@@ -1,25 +1,28 @@
-import time
+import math
 import random
+import time
+
+from geometry import Dot
 from graph import *
 
-PI = math.pi  # 상수는 대문자를 사용해야함
+PI = math.pi
 
 random.seed(time.time())
 
 
 def test(dots):
     mst_test = MinimalSpanningTree(dots)
-    print("MST 인접리스트", mst_test.adj_list)
+    print("MST 인접리스트", mst_test.adj)
     print("MST 길이", mst_test.length())
     print()
 
-    smt_test = SteinerTree(dots, mst_test.adj_list, True)
-    print("SMT 인접리스트", smt_test.adj_list)
+    smt_test = SteinerTree(mst_test, True)
+    print("SMT 인접리스트", smt_test.adj)
     print("SMT 길이", smt_test.length())
     print()
 
-    opt_smt_test = LocalOptimizedGraph(smt_test.vertices, smt_test.si_vertices, smt_test.adj_list)
-    result = opt_smt_test.optimze()
+    opt_smt_test = LocalOptimizedGraph(smt_test)
+    result = opt_smt_test.optimize()
     print("OPT_SMT 길이", opt_smt_test.length())
 
 
@@ -32,7 +35,7 @@ testcases = [[Dot(PI / 6, 2 * PI), Dot(PI / 6, 2 * PI / 3), Dot(PI / 6, 4 * PI /
              [Dot(PI / 2, 0), Dot(0, 0), Dot(0, PI / 2)]
              ]
 
-for i in range(6):
+for i in range(len(testcases)):
     print()
     print(f'=====<테스트케이스{i + 1}>=====')
     dots = testcases[i]
