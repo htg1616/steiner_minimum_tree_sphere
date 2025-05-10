@@ -1,53 +1,6 @@
-import math
-import random
 import numpy as np
-import copy
-
-class Dot:
-    def __init__(self, theta=None, phi=None):
-        if theta is not None and phi is not None:
-            self.theta = theta
-            self.phi = phi
-        else:
-            self.theta = math.acos(2 * random.random() - 1) + math.pi/2 #todo: pi/2 더한거 테스트 필요
-            self.phi = 2 * math.pi * random.random()
-
-    def __sub__(self, other):
-        cos_distance = (
-                math.cos(self.theta) * math.cos(other.theta) +
-                math.sin(self.theta) * math.sin(other.theta) * math.cos(self.phi - other.phi)
-        )
-
-        cos_distance = min(1.0, max(-1.0, cos_distance))
-        return math.acos(cos_distance)
-
-    def __eq__(self, other):  # 실수인데 부동소수점고려 해야함. ㅈ같네
-        epsilon = 1e-5
-        return self - other < epsilon
-
-    def __ne__(self, other):
-        epsilon = 1e-5
-        return self - other >= epsilon
-
-    def __copy__(self):
-        return Dot(theta=self.theta, phi=self.phi)
-
-    def angle(self, other1, other2):
-        # (self, other1)과 (self, other2)가 이루는 각 반환
-        a = self - other1
-        b = self - other2
-        c = other1 - other2
-
-        cos_angle = (math.cos(c) - math.cos(a) * math.cos(b)) / (math.sin(a) * math.sin(b))
-        cos_angle = min(1.0, max(-1.0, cos_angle))
-        return math.acos(cos_angle)
-
-    def get_cartesian(self):
-        x = math.sin(self.theta) * math.cos(self.phi)
-        y = math.sin(self.theta) * math.sin(self.phi)
-        z = math.cos(self.theta)
-        return np.array([x, y, z])
-
+import math
+from .dot import Dot
 
 def fermat_2d(A, B, C):
     """
@@ -140,6 +93,7 @@ def fermat_3d(A, B, C):
     fermat_3d_pt = A + fermat_2d_pt[0] * e1 + fermat_2d_pt[1] * e2
     return fermat_3d_pt
 
+
 def project_to_sphere(F, n):
     """
     3D 점 F와 평면의 단위 법선 벡터 n가 주어졌을 때,
@@ -151,7 +105,7 @@ def project_to_sphere(F, n):
     a_coef = 1.0
     b_coef = 2.0 * np.dot(F, n)
     c_coef = np.dot(F, F) - 1.0
-    disc = b_coef**2 - 4*a_coef*c_coef
+    disc = b_coef ** 2 - 4 * a_coef * c_coef
     if disc < 0:
         if disc > -1e-8:
             disc = 0.0
@@ -159,8 +113,8 @@ def project_to_sphere(F, n):
             raise ValueError("No real solution for projection onto the sphere.")
     sqrt_disc = math.sqrt(disc)
     # 두 근 중 |λ|가 더 작은 것을 선택 (F에서 최소 이동)
-    lambda1 = (-b_coef + sqrt_disc) / (2*a_coef)
-    lambda2 = (-b_coef - sqrt_disc) / (2*a_coef)
+    lambda1 = (-b_coef + sqrt_disc) / (2 * a_coef)
+    lambda2 = (-b_coef - sqrt_disc) / (2 * a_coef)
     if abs(lambda1) < abs(lambda2):
         lam = lambda1
     else:
@@ -168,17 +122,6 @@ def project_to_sphere(F, n):
     P = F + lam * n
     return P
 
-def cartesian_to_dot(P: np.array) -> Dot:
-    """
-    단위구 위의 3차원 좌표 P (np.array, shape(3,))를 구면좌표 (theta, phi)로 변환하여 Dot 객체를 반환한다.
-    표준 구면좌표에서 theta는 0~π, phi는 0~2π 범위이다.
-    """
-    x, y, z = P
-    theta = math.acos(z)  # r=1이므로
-    phi = math.atan2(y, x)
-    if phi < 0:
-        phi += 2 * math.pi
-    return Dot(theta, phi)
 
 def find_projected_fermat_on_sphere(a: Dot, b: Dot, c: Dot):
     """
@@ -190,7 +133,7 @@ def find_projected_fermat_on_sphere(a: Dot, b: Dot, c: Dot):
       4. F에 대해, F + λ n가 단위구(구면)에 놓이도록 하는 λ를 구하여 P = F + λ n를 계산.
       5. P를 반환 (P는 구면상에 사영된 페르마점).
     """
-    A, B, C = a.get_cartesian(), b.get_cartesian(), c.get_cartesian()
+    A, B, C = a.to_cartesian(), b.to_cartesian(), c.to_cartesian()
 
     # 평면의 단위 법선 벡터 n: n = (B-A) x (C-A) / ||(B-A) x (C-A)||
     cross_vec = np.cross(B - A, C - A)
@@ -205,5 +148,5 @@ def find_projected_fermat_on_sphere(a: Dot, b: Dot, c: Dot):
     # F는 평면상에 있으나 구면상에 있지 않으므로, 평면 법선 방향으로 λ만큼 이동시켜
     # P = F + λ n가 단위구(구면)에 놓이도록 한다.
     P = project_to_sphere(F, n)
-    dot_P = cartesian_to_dot(P)
+    dot_P = Dot.from_cartesian(P)
     return dot_P

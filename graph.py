@@ -1,6 +1,8 @@
 import numpy as np
-
-from dot import *
+import copy
+import math
+from geometry.dot import Dot
+from geometry.fermat import find_projected_fermat_on_sphere
 
 
 class MinimalSpanningTree:

@@ -1,5 +1,5 @@
 import time
-
+import random
 from graph import *
 
 PI = math.pi  # 상수는 대문자를 사용해야함
@@ -13,7 +13,7 @@ def test(dots):
     print("MST 길이", mst_test.length())
     print()
 
-    smt_test = SteinerTree(dots, mst_test.adj_list)
+    smt_test = SteinerTree(dots, mst_test.adj_list, True)
     print("SMT 인접리스트", smt_test.adj_list)
     print("SMT 길이", smt_test.length())
     print()
