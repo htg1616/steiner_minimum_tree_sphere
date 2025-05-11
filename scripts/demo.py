@@ -12,17 +12,18 @@ random.seed(time.time())
 
 def test(dots):
     mst_test = MinimalSpanningTree(dots)
-    print("MST 인접리스트", mst_test.adj)
+    # print("MST 인접리스트", mst_test.adj)
     print("MST 길이", mst_test.length())
     print()
 
     smt_test = SteinerTree(mst_test, True)
-    print("SMT 인접리스트", smt_test.adj)
+    # print("SMT 인접리스트", smt_test.adj)
     print("SMT 길이", smt_test.length())
     print()
 
     opt_smt_test = LocalOptimizedGraph(smt_test)
     result = opt_smt_test.optimize()
+    print(f"reulst[0]: {result[0]}, ressult[1]: {result[1]}")
     print("OPT_SMT 길이", opt_smt_test.length())
 
 
