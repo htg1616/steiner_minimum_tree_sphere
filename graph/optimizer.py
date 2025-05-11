@@ -10,19 +10,16 @@ from .steiner import SteinerTree
 
 class LocalOptimizedGraph(GraphBase):
     def __init__(self, steiner_tree: SteinerTree):
-        # 원본 정점과 스타이너 정점 분리
-        self.original_count = len(steiner_tree.vertices) - len(steiner_tree.steiner_vertices)
-        self.original_vertices = steiner_tree.vertices[:self.original_count]
-        self.steiner_vertices = steiner_tree.steiner_vertices
-
         # 부모 클래스 초기화
         super().__init__(steiner_tree.vertices, steiner_tree.adj)
-        self.optimized_steiner_vertices = copy.deepcopy(self.steiner_vertices)
 
-        # 스타이너 트리 간선 정보 복사
-        if steiner_tree:
-            for u, v in steiner_tree.edges():
-                self.add_edge(u, v)
+        # 원본 정점과 스타이너 정점 분리
+        self.original_count = steiner_tree.original_count
+        self.original_vertices = steiner_tree.vertices[:self.original_count]
+        self.steiner_vertices = steiner_tree.vertices[self.original_count:]
+
+        #최적화된 점 위치 임시 보관용
+        self.optimized_steiner_vertices = copy.deepcopy(self.steiner_vertices)
 
     @staticmethod
     def great_circle_gradient(point_v: Dot, point_u: Dot) -> tuple[float, float]:
@@ -124,6 +121,6 @@ class LocalOptimizedGraph(GraphBase):
 
 def optimize_smt(steiner_tree, num_iterations=1000):
     """스타이너 트리 최적화를 위한 편의 함수"""
-    optimizer = LocalOptimizedGraph(steiner_tree.vertices, steiner_tree)
+    optimizer = LocalOptimizedGraph(steiner_tree)
     results = optimizer.optimize(num_iterations)
     return results, optimizer

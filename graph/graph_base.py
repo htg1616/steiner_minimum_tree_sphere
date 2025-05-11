@@ -1,14 +1,12 @@
-from dataclasses import dataclass, field
+from copy import deepcopy
 
 from geometry.dot import Dot
 
 
-@dataclass
 class GraphBase:
-    vertices: list[Dot]
-    adj: list[list[int]] = field(default_factory=list)
-
-    def __post_init__(self):
+    def __init__(self, vertices: list[Dot], adj: list[list[int]] = None):
+        self.vertices = deepcopy(vertices)
+        self.adj = deepcopy(adj)
         if not self.adj:
             self.adj = [[] for _ in self.vertices]
 

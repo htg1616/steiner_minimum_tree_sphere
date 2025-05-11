@@ -10,8 +10,7 @@ from .mst import MinimalSpanningTree as MST
 class SteinerTree(GraphBase):
     def __init__(self, mst: MST, si_option: bool = True):
         super().__init__(mst.vertices, mst.adj)
-        self.original_vertices = mst.vertices  # 원본 점들
-        self.steiner_vertices = []  # 스타이너 점들
+        self.original_count = len(mst.vertices) # 고정된 원래 정점 개수
         self.steiner_insertion(si_option)
 
     def find_min_angle_point(self, x, y):
@@ -66,7 +65,6 @@ class SteinerTree(GraphBase):
                         point_s = copy.copy(point_y)
 
                     self.vertices.append(point_s)
-                    self.steiner_vertices.append(point_s)
                     self.adj.append([])
 
                     # 스타이너 포인트와 다른 정점들 연결
