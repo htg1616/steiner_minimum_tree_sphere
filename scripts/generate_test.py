@@ -2,10 +2,16 @@ import json
 import os
 import pickle
 import random
-
-INPUT_BASE = os.path.join("../data", "inputs")
+import sys
 
 from geometry.dot import Dot
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+sys.path.insert(0, PROJECT_ROOT)
+
+INPUT_BASE = os.path.join(PROJECT_ROOT, "data", "inputs")
+CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 
 
 def generate_test(num_dots: int, num_test: int, base_seed: int):
@@ -40,7 +46,7 @@ def generate_test(num_dots: int, num_test: int, base_seed: int):
 
 def main():
     # 설정 파일 로드: config/generate_test_config.json
-    generate_test_cfg_path = os.path.join("../config", "generate_test_config.json")
+    generate_test_cfg_path = os.path.join(CONFIG_DIR, "generate_test_config.json")
     with open(generate_test_cfg_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
 

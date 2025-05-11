@@ -1,24 +1,32 @@
-import os
-import json
-import pickle
-import logging
 import argparse
-from tqdm import tqdm
+import json
+import logging
+import os
+import pickle
+import sys
 
-INPUT_BASE  = os.path.join("../data", "inputs")
-OUTPUT_BASE = os.path.join("../data", "outputs")
+from tqdm import tqdm
 
 from geometry.dot import Dot
 from graph.mst import MinimalSpanningTree
-from graph.steiner import SteinerTree
 from graph.optimizer import LocalOptimizedGraph
+from graph.steiner import SteinerTree
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
+sys.path.insert(0, PROJECT_ROOT)
+
+INPUT_BASE = os.path.join(PROJECT_ROOT, "data", "inputs")
+OUTPUT_BASE = os.path.join(PROJECT_ROOT, "data", "outputs")
+CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
-def test_case(dots: list[Dot], generation: int) -> dict:
+
+def test_case(dots: list[Dot], generations: int) -> dict:
     """
-    하나의 테스트 케이스를 수행하고 결과를 사전 형태로 반환.
+    하나의 테스트 케이스를 수행하고 결과를 딕셔너리 형태로 반환.
     """
     # MST 생성
     mst = MinimalSpanningTree(dots)
@@ -27,30 +35,31 @@ def test_case(dots: list[Dot], generation: int) -> dict:
     # SMT 생성 (두 가지 삽입 방식)
     smt_false = SteinerTree(mst, si_option=False)
     smt_false_len = smt_false.length()
-    smt_true  = SteinerTree(mst, si_option=True)
+    smt_true = SteinerTree(mst, si_option=True)
     smt_true_len = smt_true.length()
 
     # 지역 최적화
     opt_false = LocalOptimizedGraph(smt_false)
-    opt_false_curve = opt_false.optimize(generation)
-    opt_true  = LocalOptimizedGraph(smt_true)
-    opt_true_curve  = opt_true.optimize(generation)
+    opt_false_curve = opt_false.optimize(generations)
+    opt_true = LocalOptimizedGraph(smt_true)
+    opt_true_curve = opt_true.optimize(generations)
 
     # 결과 사전
     return {
-        "mst_length":        mst_len,
-        "smt_false_length":  smt_false_len,
-        "smt_true_length":   smt_true_len,
-        "opt_false_final":   opt_false_curve[-1],
-        "opt_true_final":    opt_true_curve[-1],
-        "opt_false_curve":   opt_false_curve,
-        "opt_true_curve":    opt_true_curve
+        "mst_length": mst_len,
+        "smt_false_length": smt_false_len,
+        "smt_true_length": smt_true_len,
+        "opt_false_final": opt_false_curve[-1],
+        "opt_true_final": opt_true_curve[-1],
+        "opt_false_curve": opt_false_curve,
+        "opt_true_curve": opt_true_curve
     }
+
 
 def run_experiments(num_dots: list[int], num_tests: int, generations: int):
     """
-    data/inputs/{num_dot} 에서 .pkl 파일 num_tests개를 읽어 실험을 실행하고,
-    data/outputs/{num_dot} 에 JSON 파일로 결과를 저장합니다.
+    data/inputs/{num_dot} 폴더에서 .pkl 파일 num_tests개를 읽어 실험 실행 후,
+    data/outputs/{num_dot} 폴더에 JSON 결과 저장
     """
     os.makedirs(OUTPUT_BASE, exist_ok=True)
 
@@ -85,6 +94,7 @@ def run_experiments(num_dots: list[int], num_tests: int, generations: int):
 
         logging.info(f"[완료] {subdir} 결과 저장 → {out_dir}")
 
+
 def main():
     # 디버깅: 현재 작업 디렉토리와 경로 출력
     print(f"현재 작업 디렉토리: {os.getcwd()}")
@@ -94,9 +104,8 @@ def main():
     설정 파일(config/)에서 실험 파라미터를 읽고 run_experiments를 호출합니다.
     """
     # 설정 파일 경로
-    config_dir    = os.path.join("../config")
-    gen_cfg_path  = os.path.join(config_dir, "generate_test_config.json")
-    exp_cfg_path  = os.path.join(config_dir, "experiment_config.json")
+    gen_cfg_path = os.path.join(CONFIG_DIR, "generate_test_config.json")
+    exp_cfg_path = os.path.join(CONFIG_DIR, "experiment_config.json")
 
     # 설정 로드
     with open(gen_cfg_path, "r", encoding="utf-8") as gf:
@@ -104,9 +113,9 @@ def main():
     with open(exp_cfg_path, "r", encoding="utf-8") as ef:
         exp_cfg = json.load(ef)
 
-    num_dots = gen_cfg["num_dots"]       # Dot 개수 리스트
-    num_tests = gen_cfg["num_tests"]     # 폴더당 테스트 파일 수
-    generations = exp_cfg["generations"] # 기본 세대 수
+    num_dots = gen_cfg["num_dots"]  # Dot 개수 리스트
+    num_tests = gen_cfg["num_tests"]  # 폴더당 테스트 파일 수
+    generations = exp_cfg["generations"]  # 기본 세대 수
 
     # CLI 옵션으로 generations만 조정 가능
     parser = argparse.ArgumentParser(description="Geodesic Steiner Tree 실험 스크립트")
@@ -115,6 +124,7 @@ def main():
     args = parser.parse_args()
 
     run_experiments(num_dots, num_tests, args.generations)
+
+
 if __name__ == "__main__":
     main()
-
