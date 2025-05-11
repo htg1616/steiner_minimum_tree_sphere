@@ -95,8 +95,8 @@ def main():
     """
     # 설정 파일 경로
     config_dir    = os.path.join("../config")
-    gen_cfg_path  = os.path.join("../config", "generate_test_config.json")
-    exp_cfg_path  = os.path.join("../config", "experiment_config.json")
+    gen_cfg_path  = os.path.join(config_dir, "generate_test_config.json")
+    exp_cfg_path  = os.path.join(config_dir, "experiment_config.json")
 
     # 설정 로드
     with open(gen_cfg_path, "r", encoding="utf-8") as gf:
