@@ -1,0 +1,28 @@
+# 1) Python 가상환경
+.venv/
+venv/
+env/
+
+# 2) 바이트컴파일 & 캐시
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 3) OS별 불필요 파일
+.DS_Store
+Thumbs.db
+JSP_CACHEDIR.TAG
+
+# 4) 입력 데이터(재생성 가능)
+data/inputs/*/*.pkl
+!data/inputs/*/seeds.json
+
+# 5) 실험 결과 (매번 새로 만들어짐)
+data/outputs/
+
+# 6) 로그
+*.log
+
+# 7) IDE 설정
+.vscode/
+.idea/
