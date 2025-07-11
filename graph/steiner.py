@@ -8,10 +8,10 @@ from .mst import MinimalSpanningTree as MST
 
 
 class SteinerTree(GraphBase):
-    def __init__(self, mst: MST, si_option: bool = True):
+    def __init__(self, mst: MST, use_projected_fermat: bool):
         super().__init__(mst.vertices, mst.adj)
         self.original_count = len(mst.vertices) # 고정된 원래 정점 개수
-        self.steiner_insertion(si_option)
+        self.steiner_insertion(use_projected_fermat)
 
     def find_min_angle_point(self, x, y):
         """edge (x, y)와 (y, z)가 가장 작은 각을 이루는 z 찾기"""
@@ -72,7 +72,3 @@ class SteinerTree(GraphBase):
                     self.add_edge(y, s_idx)
                     self.add_edge(z, s_idx)
 
-
-def build_smt(vertices: list[Dot], mst=None, si_option: bool = True) -> SteinerTree:
-    """스타이너 트리를 생성하는 편의 함수"""
-    return SteinerTree(mst, si_option)
