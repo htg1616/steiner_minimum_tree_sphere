@@ -16,7 +16,7 @@ def test(dots):
     print("MST 길이", mst_test.length())
     print()
 
-    smt_test = SteinerTree(mst_test, True)
+    smt_test = SteinerTree(mst_test)
     # print("SMT 인접리스트", smt_test.adj)
     print("SMT 길이", smt_test.length())
     print()
@@ -32,8 +32,7 @@ testcases = [[Dot(PI / 6, 2 * PI), Dot(PI / 6, 2 * PI / 3), Dot(PI / 6, 4 * PI /
              [Dot(PI / 12, 2 * PI), Dot(PI / 2, PI / 4), Dot(PI / 2, PI / 12), Dot(PI / 3, PI / 6)],
              [Dot(0.00000001, 2 * PI), Dot(PI / 4, PI / 2), Dot(PI / 4, 2 * PI), Dot(PI / 3, PI)],
              [Dot(0.00000001, 2 * PI), Dot(PI / 6, PI / 6), Dot(PI / 6, 2 * PI), Dot(PI / 3, 2 * PI),
-              Dot(PI / 6, -PI / 6)],
-             [Dot(PI / 2, 0), Dot(0, 0), Dot(0, PI / 2)]
+              Dot(PI / 6, -PI / 6)]
              ]
 
 for i in range(len(testcases)):

@@ -33,9 +33,9 @@ def test_case(dots: list[Dot], generations: int) -> dict:
     mst_len = mst.length()
 
     # SMT 생성 (두 가지 삽입 방식)
-    smt_false = SteinerTree(mst, use_projected_fermat=False)
+    smt_false = SteinerTree(mst)
     smt_false_len = smt_false.length()
-    smt_true = SteinerTree(mst, use_projected_fermat=True)
+    smt_true = SteinerTree(mst)
     smt_true_len = smt_true.length()
 
     # 지역 최적화

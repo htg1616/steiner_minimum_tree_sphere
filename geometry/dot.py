@@ -43,7 +43,7 @@ class Dot:
         return Dot(theta=self.theta, phi=self.phi)
 
     def angle(self, other1, other2):
-        # (self, other1)과 (self, other2)가 이루는 각 반환
+        """두 점 self, other1, other2 사이의 각을 radian으로 반환."""
         a = self - other1
         b = self - other2
         c = other1 - other2

@@ -11,12 +11,13 @@ from .steiner import SteinerTree
 class LocalOptimizedGraph(GraphBase):
     def __init__(self, steiner_tree: SteinerTree):
         # 부모 클래스 초기화
-        super().__init__(steiner_tree.vertices, steiner_tree.adj)
+        vertices = copy.deepcopy(steiner_tree.fixed_vertices) + copy.deepcopy(steiner_tree.steiner_vertices)
+        super().__init__(vertices, steiner_tree.adj)
 
         # 원본 정점과 스타이너 정점 분리
-        self.original_count = steiner_tree.original_count
-        self.original_vertices = steiner_tree.vertices[:self.original_count]
-        self.steiner_vertices = steiner_tree.vertices[self.original_count:]
+        self.original_count = steiner_tree.fixed_count
+        self.original_vertices = copy.deepcopy(steiner_tree.fixed_vertices)
+        self.steiner_vertices = copy.deepcopy(steiner_tree.steiner_vertices)
 
         #최적화된 점 위치 임시 보관용
         self.optimized_steiner_vertices = copy.deepcopy(self.steiner_vertices)

@@ -1,6 +1,5 @@
 # 1) Python 가상환경
 .venv/
-venv/
 env/
 
 # 2) 바이트컴파일 & 캐시
@@ -19,10 +18,15 @@ data/inputs/*/*.pkl
 
 # 5) 실험 결과 (매번 새로 만들어짐)
 data/outputs/
+averages.txt
+averages_improve.txt
 
-# 6) 로그
+# 6) 임시용 파일
+scripts/cal_average.py
+
+# 7) 로그
 *.log
 
-# 7) IDE 설정
+# 8) IDE 설정
 .vscode/
 .idea/
