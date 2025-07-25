@@ -1,3 +1,4 @@
 {
-  "generations": 1000
+  "generations": 1000,
+  "insertion_mode": "decrease_only"
 }

@@ -22,7 +22,7 @@ averages.txt
 averages_improve.txt
 
 # 6) 임시용 파일
-scripts/cal_average.py
+experiments/cal_average.py
 
 # 7) 로그
 *.log

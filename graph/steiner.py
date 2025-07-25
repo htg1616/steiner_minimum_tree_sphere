@@ -3,17 +3,19 @@ import math
 import itertools
 
 from geometry.dot import Dot
-from geometry.fermat import find_projected_fermat_on_sphere
+from geometry.fermat import find_projected_fermat_on_sphere, is_point_in_spherical_triangle
 from .mst import MinimalSpanningTree as MST
+from .enums import InsertionMode
 
 
 class SteinerTree:
-    def __init__(self, mst: MST):
+    def __init__(self, mst: MST, insertion_mode):
         self.fixed_vertices = copy.deepcopy(mst.vertices)  # 고정된 정점들
         self.fixed_count = len(mst.vertices) # 고정된 원래 정점 개수
         self.steiner_vertices = [] # 스타이너 포인트를 저장할 리스트
         self.steiner_count = 0 # 스타이너 포인트 개수
         self.adj = copy.deepcopy(mst.adj)  # 인접 리스트 복사
+        self.insertion_mode = insertion_mode
 
         self.steiner_insertion()
 
@@ -62,9 +64,9 @@ class SteinerTree:
                         smallest_k = k
 
                 if smallest_anlge < 2 * math.pi / 3:  # 120도 미만인 경우
-                    self.add_steiner_vertice(i, smallest_j, smallest_k)
+                    inserted_flag = self.add_steiner_vertice(i, smallest_j, smallest_k) # 스타이너 포인트가 삽입되었으므로 다시 반복
 
-    def add_steiner_vertice(self, u: int, v: int, w: int):
+    def add_steiner_vertice(self, u: int, v: int, w: int) -> bool:
         """
         스타이너 포인트를 추가하고 인접 리스트 업데이트
         : param u: 스타이너 포인트를 추가할 각의 꼭짓점
@@ -77,10 +79,25 @@ class SteinerTree:
         # 스타이너 점 계산
         steiner_point = find_projected_fermat_on_sphere(point_u, point_v, point_w)
 
+        # 구면삼각형 내부 검증
+        is_inside = is_point_in_spherical_triangle(steiner_point, point_u, point_v, point_w)
+
+        if not is_inside:
+            raise ValueError("스타이너 점이 구면삼각형 내부에 위치하지 않습니다.")
+
         # 스타이너 점이 기존 정점과 동일한지 확인
         for vertex in [point_u, point_v, point_w]:
             if steiner_point == vertex:
                 raise ValueError("스타이너 점이 기존 정점과 동일합니다.")
+
+        old_len = (point_u - point_v) + (point_u - point_w)
+        new_len = (steiner_point - point_v) + (steiner_point - point_w) + (steiner_point - point_u)
+
+        if self.insertion_mode == InsertionMode.DECREASE_ONLY and new_len > old_len:
+            return False
+        elif self.insertion_mode == InsertionMode.INSERT_WITH_OPTIMIZE:
+            raise NotImplementedError("INSERT_WITH_OPTIMIZE 모드는 아직 구현되지 않았습니다.")
+
 
         # 스타이너 점을 리스트에 추가
         self.steiner_vertices.append(steiner_point)
@@ -98,3 +115,5 @@ class SteinerTree:
 
         # 새로 추가된 스타이너 점과 기존 정점들 간의 연결
         self.adj.append([u, v, w])
+
+        return True

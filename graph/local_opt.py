@@ -119,9 +119,3 @@ class LocalOptimizedGraph(GraphBase):
 
         return results
 
-
-def optimize_smt(steiner_tree, num_iterations=1000):
-    """스타이너 트리 최적화를 위한 편의 함수"""
-    optimizer = LocalOptimizedGraph(steiner_tree)
-    results = optimizer.optimize(num_iterations)
-    return results, optimizer

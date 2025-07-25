@@ -150,3 +150,41 @@ def find_projected_fermat_on_sphere(a: Dot, b: Dot, c: Dot):
     P = project_to_sphere(F, n)
     dot_P = Dot.from_cartesian(P)
     return dot_P
+
+
+def is_point_in_spherical_triangle(p: Dot, a: Dot, b: Dot, c: Dot) -> bool:
+    """
+    점 p가 구면삼각형 a-b-c 내부에 있는지 확인
+    구면삼각형 내부 판정 방법: 점 p에서 삼각형의 각 변까지의 대원 거리가 모두 양수인지 확인
+    """
+    # 삼각형의 각 변을 나타내는 법선 벡터 계산
+    a_cart = a.to_cartesian()
+    b_cart = b.to_cartesian()
+    c_cart = c.to_cartesian()
+    p_cart = p.to_cartesian()
+
+    # 각 변의 법선 벡터 계산 (외적)
+    n_ab = np.cross(a_cart, b_cart)
+    n_bc = np.cross(b_cart, c_cart)
+    n_ca = np.cross(c_cart, a_cart)
+
+    # 법선 벡터 정규화
+    n_ab = n_ab / np.linalg.norm(n_ab)
+    n_bc = n_bc / np.linalg.norm(n_bc)
+    n_ca = n_ca / np.linalg.norm(n_ca)
+
+    # 삼각형의 방향을 일관되게 유지 (모든 법선이 같은 방향을 가리키도록)
+    if np.dot(n_ab, c_cart) < 0:
+        n_ab = -n_ab
+    if np.dot(n_bc, a_cart) < 0:
+        n_bc = -n_bc
+    if np.dot(n_ca, b_cart) < 0:
+        n_ca = -n_ca
+
+    # 점 p가 각 변의 올바른 쪽에 있는지 확인
+    d_ab = np.dot(p_cart, n_ab)
+    d_bc = np.dot(p_cart, n_bc)
+    d_ca = np.dot(p_cart, n_ca)
+
+    # 모든 거리가 양수이면 점이 삼각형 내부에 있음
+    return d_ab > -1e-10 and d_bc > -1e-10 and d_ca > -1e-10

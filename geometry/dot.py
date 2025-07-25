@@ -35,6 +35,9 @@ class Dot:
     def __eq__(self, other):
         return self - other < self.EPSILON
 
+    def __repr__(self):
+        return f"Dot(theta={self.theta:.6f}, phi={self.phi:.6f})"
+
     def __ne__(self, other):
         epsilon = 1e-5
         return self - other >= epsilon

@@ -7,14 +7,15 @@ import sys
 
 from tqdm import tqdm
 
-from geometry.dot import Dot
-from graph.mst import MinimalSpanningTree
-from graph.optimizer import LocalOptimizedGraph
-from graph.steiner import SteinerTree
-
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir))
 sys.path.insert(0, PROJECT_ROOT)
+
+from geometry.dot import Dot
+from graph.enums import InsertionMode
+from graph.mst import MinimalSpanningTree
+from graph.local_opt import LocalOptimizedGraph
+from graph.steiner import SteinerTree
 
 INPUT_BASE = os.path.join(PROJECT_ROOT, "data", "inputs")
 OUTPUT_BASE = os.path.join(PROJECT_ROOT, "data", "outputs")
@@ -24,7 +25,7 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 
-def test_case(dots: list[Dot], generations: int) -> dict:
+def test_case(dots: list[Dot], generations: int, insertion_mode: InsertionMode) -> dict:
     """
     하나의 테스트 케이스를 수행하고 결과를 딕셔너리 형태로 반환.
     """
@@ -33,30 +34,23 @@ def test_case(dots: list[Dot], generations: int) -> dict:
     mst_len = mst.length()
 
     # SMT 생성 (두 가지 삽입 방식)
-    smt_false = SteinerTree(mst)
-    smt_false_len = smt_false.length()
-    smt_true = SteinerTree(mst)
-    smt_true_len = smt_true.length()
+    smt = SteinerTree(mst, insertion_mode)
+    smt_len = smt.length()
 
     # 지역 최적화
-    opt_false = LocalOptimizedGraph(smt_false)
-    opt_false_curve = opt_false.optimize(generations)
-    opt_true = LocalOptimizedGraph(smt_true)
-    opt_true_curve = opt_true.optimize(generations)
+    opt_smt = LocalOptimizedGraph(smt)
+    opt_smt_curve = opt_smt.optimize(generations)
 
     # 결과 사전
     return {
         "mst_length": mst_len,
-        "smt_false_length": smt_false_len,
-        "smt_true_length": smt_true_len,
-        "opt_false_final": opt_false_curve[-1],
-        "opt_true_final": opt_true_curve[-1],
-        "opt_false_curve": opt_false_curve,
-        "opt_true_curve": opt_true_curve
+        "smt_length": smt_len,
+        "opt_smt_length": opt_smt_curve[-1],
+        "opt_smt_curve": opt_smt_curve
     }
 
 
-def run_experiments(num_dots: list[int], num_tests: int, generations: int):
+def run_experiments(num_dots: list[int], num_tests: int, generations: int, insertion_mode: InsertionMode):
     """
     data/inputs/{num_dot} 폴더에서 .pkl 파일 num_tests개를 읽어 실험 실행 후,
     data/outputs/{num_dot} 폴더에 JSON 결과 저장
@@ -74,7 +68,7 @@ def run_experiments(num_dots: list[int], num_tests: int, generations: int):
             continue
 
         os.makedirs(out_dir, exist_ok=True)
-        logging.info(f"[실험 시작] {subdir} - generations={generations}")
+        logging.info(f"[실험 시작] {subdir} - generations={generations} - insertion_mode={insertion_mode}")
 
         # 각 테스트 케이스 파일에 tqdm 적용
         for i in tqdm(range(1, num_tests + 1), desc=f"{num_dot} dots 처리중"):
@@ -85,7 +79,7 @@ def run_experiments(num_dots: list[int], num_tests: int, generations: int):
                 dots = pickle.load(rf)
 
             # 실험 수행
-            result = test_case(dots, generations)
+            result = test_case(dots, generations, insertion_mode)
 
             # JSON 저장 (.json 확장자)
             json_path = os.path.join(out_dir, fname.replace(".pkl", ".json"))
@@ -116,14 +110,16 @@ def main():
     num_dots = gen_cfg["num_dots"]  # Dot 개수 리스트
     num_tests = gen_cfg["num_tests"]  # 폴더당 테스트 파일 수
     generations = exp_cfg["generations"]  # 기본 세대 수
+    insertion_mode = exp_cfg["insertion_mode"]  # 삽입 모드
 
-    # CLI 옵션으로 generations만 조정 가능
+    # CLI 옵션으로 experiment config 조정 가능
     parser = argparse.ArgumentParser(description="Geodesic Steiner Tree 실험 스크립트")
     parser.add_argument("-g", "--generations", type=int, default=generations,
                         help="로컬 최적화 세대 수")
+    parser.add_argument("-i", "--insertion_mode", type=InsertionMode, choices=list(InsertionMode) ,default=insertion_mode, help="thompson's method 세부 모드")
     args = parser.parse_args()
 
-    run_experiments(num_dots, num_tests, args.generations)
+    run_experiments(num_dots, num_tests, args.generations, args.insertion_mode)
 
 
 if __name__ == "__main__":
