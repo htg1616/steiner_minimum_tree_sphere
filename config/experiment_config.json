@@ -1,4 +1,11 @@
 {
-  "generations": 1000,
+  "backend": "geo",
+  "optimizer_name": "radam",
+  "optimizer_params": {
+    "lr": 0.01
+  },
+  "max_iterations": 1000,
+  "tolerance": 1e-6,
+  "device": "cpu",
   "insertion_mode": "decrease_only"
 }

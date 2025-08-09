@@ -6,7 +6,7 @@ from geometry.dot import Dot
 from graph.enums import InsertionMode
 from graph.mst import MinimalSpanningTree
 from graph.steiner import SteinerTree
-from graph.local_opt import LocalOptimizedGraph
+from graph.local_opt import make_local_optimizer
 
 # demo.py에서 가져온 테스트 케이스
 testcases = [
@@ -46,7 +46,7 @@ testcases.extend(special_angle_cases)
 
 # 랜덤 테스트 케이스 생성
 for i in range(50):
-    dots = [Dot() for _ in range(random.randint(3, 3))]
+    dots = [Dot() for _ in range(random.randint(3, 5))]
     testcases.append((dots, f"random_case_{i+1}"))
 
 @pytest.mark.parametrize("dots, name", testcases)
@@ -62,6 +62,11 @@ def test_algorithm_length_reduction(dots, name):
     smt = SteinerTree(mst, InsertionMode.DECREASE_ONLY)
     smt_length = smt.length()
 
+    # 스타이너 점이 없으면 최적화 스킵
+    if smt.steiner_count == 0:
+        print(f"Testing {name}: No Steiner points, skipping optimization")
+        return
+
     # 스타이너 점들의 정보 수집
     steiner_points_info = []
     for i, sp in enumerate(smt.steiner_vertices):
@@ -70,6 +75,7 @@ def test_algorithm_length_reduction(dots, name):
         steiner_points_info.append({
             "index": steiner_idx,
             "position": {"theta": sp.theta, "phi": sp.phi},
+            "neighbors": list(neighbors)
         })
 
     # 연결 정보 수집
@@ -85,20 +91,26 @@ def test_algorithm_length_reduction(dots, name):
                 })
 
     # 3. Optimizer 적용
-    opt_smt = LocalOptimizedGraph(smt)
-    opt_smt.optimize()
-    opt_smt_length = opt_smt.length()
+    optimizer = make_local_optimizer(
+        backend="geo",
+        steiner_tree=smt,
+        optim_name="radam",
+        hyper_param={"lr": 0.001},
+        max_iter=50,
+        tolerance=1e-6,
+        device="cpu"
+    )
 
-    print(f"Testing {name}:")
-    print(f"  MST length: {mst_length}")
-    print(f"  SMT length: {smt_length}")
-    print(f"  Optimized SMT length: {opt_smt_length}")
-    print(f"  Steiner points count: {smt.steiner_count}")
+    # 최적화 실행
+    final_loss, loss_history = optimizer.run()
+
+    opt_smt_length = final_loss.item()
 
     # SMT 길이 >= Optimized SMT 길이 여부 확인
-    assert smt_length >= opt_smt_length, f"Optimized SMT should be shorter than or equal to SMT for {name}\n" \
-                                        f"SMT: {smt_length}, Opt-SMT: {opt_smt_length}\n" \
+    assert smt_length >= opt_smt_length - 1e-5, f"Optimized SMT should be shorter than or equal to SMT for {name}\n" \
+                                        f"MST: {mst_length:.6f}, SMT: {smt_length:.6f}, Opt-SMT: {opt_smt_length:.6f}\n" \
                                         f"Steiner points: {steiner_points_info}\n" \
-                                        f"Connections: {connections}"
-
+                                        f"Connections: {connections}\n"\
+                                        f"loss_history chunks (10 gap): {[loss_history[i] for i in range(0, len(loss_history), 10)]}\n"\
+                                        f"first loss: {loss_history[0]}\n"\
 

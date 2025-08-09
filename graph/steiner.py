@@ -1,6 +1,7 @@
 import copy
 import math
 import itertools
+import torch
 
 from geometry.dot import Dot
 from geometry.fermat import find_projected_fermat_on_sphere, is_point_in_spherical_triangle
@@ -42,6 +43,58 @@ class SteinerTree:
                     total_length += self.get_distance(u, v)
         return total_length
 
+    def get_vertices_angle_tensor(self, device):
+        """모든 정점의 theta, phi 좌표를 텐서로 반환 (optimizer 인터페이스)"""
+        vertices = []
+
+        # 고정 정점들의 좌표
+        for i in range(self.fixed_count):
+            dot = self.fixed_vertices[i]
+            vertices.append([dot.theta, dot.phi])
+
+        # 스타이너 정점들의 좌표
+        for i in range(self.steiner_count):
+            dot = self.steiner_vertices[i]
+            vertices.append([dot.theta, dot.phi])
+
+        return torch.tensor(vertices, dtype=torch.float64, device=device)
+
+    def get_vertices_xyz_tensor(self, device):
+        """모든 정점의 x, y, z 좌표를 텐서로 반환 (optimizer 인터페이스)"""
+        angle_tensor = self.get_vertices_angle_tensor(device)
+
+        # theta, phi를 x, y, z로 변환
+        theta = angle_tensor[:, 0]  # theta 좌표
+        phi = angle_tensor[:, 1]    # phi 좌표
+
+        x = torch.sin(theta) * torch.cos(phi)
+        y = torch.sin(theta) * torch.sin(phi)
+        z = torch.cos(theta)
+
+        return torch.stack([x, y, z], dim=1)
+
+    def get_edge_index(self, device):
+        """간선 인덱스를 텐서로 반환 (optimizer 인터페이스)"""
+        total_count = self.fixed_count + self.steiner_count
+        edges = []
+
+        for u in range(total_count):
+            for v in self.adj[u]:
+                if u < v:  # 중복 제거
+                    edges.append([u, v])
+
+        if len(edges) == 0:
+            return torch.empty((0, 2), dtype=torch.long, device=device)
+
+        return torch.tensor(edges, dtype=torch.long, device=device)
+
+    def get_steiner_mask(self, device):
+        """스타이너 점 마스크를 불리언 텐서로 반환 (optimizer 인터페이스)"""
+        total_count = self.fixed_count + self.steiner_count
+        mask = torch.zeros(total_count, dtype=torch.bool, device=device)
+        if self.steiner_count > 0:
+            mask[self.fixed_count:] = True
+        return mask
 
     def steiner_insertion(self):
         """thompson's method 적용하여 스타이너 포인트 삽입"""

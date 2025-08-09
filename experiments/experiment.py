@@ -14,7 +14,7 @@ sys.path.insert(0, PROJECT_ROOT)
 from geometry.dot import Dot
 from graph.enums import InsertionMode
 from graph.mst import MinimalSpanningTree
-from graph.local_opt import LocalOptimizedGraph
+from graph.local_opt import make_local_optimizer
 from graph.steiner import SteinerTree
 
 INPUT_BASE = os.path.join(PROJECT_ROOT, "data", "inputs")
@@ -25,7 +25,7 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
 
-def test_case(dots: list[Dot], generations: int, insertion_mode: InsertionMode) -> dict:
+def test_case(dots: list[Dot], exp_config: dict) -> dict:
     """
     하나의 테스트 케이스를 수행하고 결과를 딕셔너리 형태로 반환.
     """
@@ -33,24 +33,36 @@ def test_case(dots: list[Dot], generations: int, insertion_mode: InsertionMode) 
     mst = MinimalSpanningTree(dots)
     mst_len = mst.length()
 
-    # SMT 생성 (두 가지 삽입 방식)
+    # SMT 생성 (삽입 모드에 따라)
+    insertion_mode = InsertionMode(exp_config["insertion_mode"])
     smt = SteinerTree(mst, insertion_mode)
     smt_len = smt.length()
 
     # 지역 최적화
-    opt_smt = LocalOptimizedGraph(smt)
-    opt_smt_curve = opt_smt.optimize(generations)
+    optimizer = make_local_optimizer(
+        backend=exp_config["backend"],
+        steiner_tree=smt,
+        optim_name=exp_config["optimizer_name"],
+        hyper_param=exp_config["optimizer_params"],
+        max_iter=exp_config["max_iterations"],
+        tolerance=exp_config["tolerance"],
+        device=exp_config["device"]
+    )
+    
+    # 최적화 실행
+    final_loss, loss_history = optimizer.run()
 
     # 결과 사전
     return {
         "mst_length": mst_len,
         "smt_length": smt_len,
-        "opt_smt_length": opt_smt_curve[-1],
-        "opt_smt_curve": opt_smt_curve
+        "opt_smt_length": final_loss.item() if hasattr(final_loss, 'item') else float(final_loss),
+        "opt_smt_curve": [float(loss) for loss in loss_history],
+        "optimization_iterations": len(loss_history)
     }
 
 
-def run_experiments(num_dots: list[int], num_tests: int, generations: int, insertion_mode: InsertionMode):
+def run_experiments(num_dots: list[int], num_tests: int, exp_config: dict):
     """
     data/inputs/{num_dot} 폴더에서 .pkl 파일 num_tests개를 읽어 실험 실행 후,
     data/outputs/{num_dot} 폴더에 JSON 결과 저장
@@ -68,7 +80,9 @@ def run_experiments(num_dots: list[int], num_tests: int, generations: int, inser
             continue
 
         os.makedirs(out_dir, exist_ok=True)
-        logging.info(f"[실험 시작] {subdir} - generations={generations} - insertion_mode={insertion_mode}")
+        logging.info(f"[실험 시작] {subdir} - backend={exp_config['backend']} - "
+                    f"optimizer={exp_config['optimizer_name']} - "
+                    f"max_iter={exp_config['max_iterations']}")
 
         # 각 테스트 케이스 파일에 tqdm 적용
         for i in tqdm(range(1, num_tests + 1), desc=f"{num_dot} dots 처리중"):
@@ -78,13 +92,18 @@ def run_experiments(num_dots: list[int], num_tests: int, generations: int, inser
             with open(path, "rb") as rf:
                 dots = pickle.load(rf)
 
-            # 실험 수행
-            result = test_case(dots, generations, insertion_mode)
+            try:
+                # 실험 수행
+                result = test_case(dots, exp_config)
 
-            # JSON 저장 (.json 확장자)
-            json_path = os.path.join(out_dir, fname.replace(".pkl", ".json"))
-            with open(json_path, "w", encoding="utf-8") as wf:
-                json.dump(result, wf, ensure_ascii=False, indent=2)
+                # JSON 저장 (.json 확장자)
+                json_path = os.path.join(out_dir, fname.replace(".pkl", ".json"))
+                with open(json_path, "w", encoding="utf-8") as wf:
+                    json.dump(result, wf, ensure_ascii=False, indent=2)
+            
+            except Exception as e:
+                logging.error(f"테스트 케이스 {fname} 실행 중 오류: {e}")
+                continue
 
         logging.info(f"[완료] {subdir} 결과 저장 → {out_dir}")
 
