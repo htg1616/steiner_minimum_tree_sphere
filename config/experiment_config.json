@@ -2,8 +2,10 @@
   "backend": "geo",
   "optimizer_name": "radam",
   "optimizer_params": {
-    "lr": 0.01
+    "lr" : 5e-3, "betas" : [0.9, 0.9995], "eps": 1e-8, "weight_decay" : 1e-5
   },
+  "scheduler_name": "cosine_hold",
+  "scheduler_params": {"decay_steps": 100, "eta_min": 5e-5},
   "max_iterations": 1000,
   "tolerance": 1e-6,
   "device": "cpu",

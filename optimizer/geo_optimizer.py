@@ -48,7 +48,9 @@ class GeoOptimizer(OptimizerBase):
                  optim_name: str,
                  hyper_param: dict | None = None,
                  max_iter: int = 10000,
-                 tolerance: float = 1e-6):
+                 tolerance: float = 1e-6,
+                 scheduler_name: str | None = None,
+                 scheduler_param: dict | None = None):
         """
         Args:
             vertices: 3D 단위벡터 (N, 3) 텐서
@@ -58,6 +60,8 @@ class GeoOptimizer(OptimizerBase):
             hyper_param: optimizer 하이퍼파라미터 딕셔너리
             max_iter: 최대 반복 횟수
             tolerance: 수렴 판단 기준
+            scheduler_name: 스케줄러 이름
+            scheduler_param: 스케줄러 하이퍼파라미터 딕셔너리
         """
         # 입력이 3D 벡터인지 확인
         if vertices.shape[1] != 3:
@@ -66,7 +70,7 @@ class GeoOptimizer(OptimizerBase):
         # geoopt factory 생성
         optimizer_factory = make_geoopt_factory(optim_name, hyper_param if hyper_param is not None else {})
 
-        # 기본 클래스 초기화 - optimizer_factory는 나중에 오버라이드됨
+        # 기본 클래스 초기화
         super().__init__(
             vertices=vertices,
             edge_index=edge_index,
@@ -74,7 +78,9 @@ class GeoOptimizer(OptimizerBase):
             objective=length_xyzs,
             optimizer_factory=optimizer_factory,
             max_iter=max_iter,
-            tolerance=tolerance
+            tolerance=tolerance,
+            scheduler_name=scheduler_name,
+            scheduler_params=scheduler_param
         )
 
     def _create_train_param(self) -> geoopt.ManifoldParameter:

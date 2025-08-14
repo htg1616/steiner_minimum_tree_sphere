@@ -39,15 +39,11 @@ def test_case(dots: list[Dot], exp_config: dict) -> dict:
     smt_len = smt.length()
 
     # 지역 최적화
-    optimizer = make_local_optimizer(
-        backend=exp_config["backend"],
-        steiner_tree=smt,
-        optim_name=exp_config["optimizer_name"],
-        hyper_param=exp_config["optimizer_params"],
-        max_iter=exp_config["max_iterations"],
-        tolerance=exp_config["tolerance"],
-        device=exp_config["device"]
-    )
+    optimizer = make_local_optimizer(backend=exp_config["backend"], steiner_tree=smt,
+                                     optim_name=exp_config["optimizer_name"],
+                                     optim_param=exp_config["optimizer_params"], max_iter=exp_config["max_iterations"],
+                                     scheduler_name=exp_config["scheduler_name"], scheduler_param=exp_config["scheduler_params"],
+                                     tolerance=exp_config["tolerance"], device=exp_config["device"])
     
     # 최적화 실행
     final_loss, loss_history = optimizer.run()
@@ -128,17 +124,24 @@ def main():
 
     num_dots = gen_cfg["num_dots"]  # Dot 개수 리스트
     num_tests = gen_cfg["num_tests"]  # 폴더당 테스트 파일 수
-    generations = exp_cfg["generations"]  # 기본 세대 수
-    insertion_mode = exp_cfg["insertion_mode"]  # 삽입 모드
 
     # CLI 옵션으로 experiment config 조정 가능
     parser = argparse.ArgumentParser(description="Geodesic Steiner Tree 실험 스크립트")
-    parser.add_argument("-g", "--generations", type=int, default=generations,
-                        help="로컬 최적화 세대 수")
-    parser.add_argument("-i", "--insertion_mode", type=InsertionMode, choices=list(InsertionMode) ,default=insertion_mode, help="thompson's method 세부 모드")
+    parser.add_argument("-b", "--backend", type=str, default=exp_cfg["backend"],
+                  help="최적화 백엔드 (예: torch, numpy)")
+    parser.add_argument("-o", "--optimizer", type=str, default=exp_cfg["optimizer_name"],
+                        help="옵티마이저 이름")
+    parser.add_argument("-i", "--insertion_mode", type=str, default=exp_cfg["insertion_mode"],
+                        help="삽입 모드 (NORMAL, GREEDY, RANDOM)")
+    parser.add_argument("-m", "--max_iterations", type=int, default=exp_cfg["max_iterations"],
+                        help="최대 반복 횟수")
     args = parser.parse_args()
 
-    run_experiments(num_dots, num_tests, args.generations, args.insertion_mode)
+    # CLI 인자로 실험 설정 업데이트
+    exp_cfg["backend"] = args.backend
+    exp_cfg["optimizer_name"] = args.optimizer
+    exp_cfg["insertion_mode"] = args.insertion_mode
+    run_experiments(num_dots, num_tests, exp_cfg)
 
 
 if __name__ == "__main__":

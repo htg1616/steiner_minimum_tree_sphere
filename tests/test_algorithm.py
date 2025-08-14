@@ -91,15 +91,8 @@ def test_algorithm_length_reduction(dots, name):
                 })
 
     # 3. Optimizer 적용
-    optimizer = make_local_optimizer(
-        backend="geo",
-        steiner_tree=smt,
-        optim_name="radam",
-        hyper_param={"lr": 0.001},
-        max_iter=50,
-        tolerance=1e-6,
-        device="cpu"
-    )
+    optimizer = make_local_optimizer(backend="geo", steiner_tree=smt, optim_name="radam", optim_param={"lr": 0.001},
+                                     max_iter=50, tolerance=1e-6, device="cpu")
 
     # 최적화 실행
     final_loss, loss_history = optimizer.run()

@@ -170,6 +170,27 @@ class TestGeoOptimizer:
         norms = manifold_param.norm(dim=-1)
         assert torch.allclose(norms, torch.ones_like(norms), atol=1e-6)
 
+    @pytest.mark.parametrize("scheduler_name, scheduler_param", [
+        ("cosine", {"eta_min": 0.0}),
+        ("plateau", {"patience": 1, "factor": 0.5}),
+        (None, None),
+    ])
+    def test_scheduler(self, simple_graph_data, scheduler_name, scheduler_param):
+        vertices, edge_index, steiner_mask = simple_graph_data
+        optz = GeoOptimizer(
+            vertices=vertices,
+            edge_index=edge_index,
+            steiner_mask=steiner_mask,
+            optim_name="radam",
+            hyper_param={"lr": 0.01},
+            max_iter=8,
+            scheduler_name=scheduler_name,
+            scheduler_param={"eta_min": 0.0} if scheduler_name == "cosine" else None,
+        )
+        final_loss, hist = optz.run()
+        assert torch.isfinite(final_loss)
+        assert all(math.isfinite(x) for x in hist)
+
     @pytest.mark.parametrize("optim_name", ["radam", "rsgd"])
     def test_integration_run(self, simple_graph_data, optim_name):
         """통합 실행 테스트"""

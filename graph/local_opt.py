@@ -4,15 +4,9 @@ from optimizer.geo_optimizer import GeoOptimizer
 from optimizer.torch_optimizer import TorchOptimizer
 
 
-def make_local_optimizer(
-    backend: str,
-    steiner_tree,
-    optim_name: str,
-    hyper_param: dict | None = None,
-    max_iter: int = 10000,
-    tolerance: float = 1e-6,
-    device: str | torch.device = "cpu",
-):
+def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_param: dict | None = None,
+                         scheduler_name: str = None, scheduler_param: dict = None, max_iter: int = 10000, tolerance: float = 1e-6,
+                         device: str | torch.device = "cpu"):
     """
     로컬 최적화기를 생성하는 팩토리 함수
 
@@ -20,7 +14,9 @@ def make_local_optimizer(
         backend: 최적화 백엔드 ('torch', 'geo')
         steiner_tree: SteinerTree 같은 그래프 객체
         optim_name: optimizer 이름 ('adam', 'sgd' 등)
-        hyper_param: optimizer 하이퍼파라미터 딕셔너리
+        optim_param: optimizer 하이퍼파라미터 딕셔너리
+        scheduler_name: 스케줄러 이름
+        scheduler_param: 스케줄러 하이퍼파라미터 딕셔너리
         max_iter: 최대 반복 횟수
         tolerance: 수렴 판단 기준
         device: 연산 장치 ('cpu', 'cuda' 등)
@@ -38,9 +34,11 @@ def make_local_optimizer(
             edge_index=edges,
             steiner_mask=mask,
             optim_name=optim_name,
-            hyper_param=hyper_param,
+            hyper_param=optim_param,
             max_iter=max_iter,
-            tolerance=tolerance
+            tolerance=tolerance,
+            scheduler_name=scheduler_name,
+            scheduler_param=scheduler_param
         )
     elif backend.lower() == "geo":
         verts = steiner_tree.get_vertices_xyz_tensor(device)
@@ -49,9 +47,11 @@ def make_local_optimizer(
             edge_index=edges,
             steiner_mask=mask,
             optim_name=optim_name,
-            hyper_param=hyper_param,
+            hyper_param=optim_param,
             max_iter=max_iter,
-            tolerance=tolerance
+            tolerance=tolerance,
+            scheduler_name=scheduler_name,
+            scheduler_param=scheduler_param
         )
 
     else:

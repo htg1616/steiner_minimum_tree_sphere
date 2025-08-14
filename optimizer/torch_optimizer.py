@@ -60,7 +60,9 @@ class TorchOptimizer(OptimizerBase):
                  optim_name: str,
                  hyper_param: dict | None = None,
                  max_iter: int = 10000,
-                 tolerance: float = 1e-6):
+                 tolerance: float = 1e-6,
+                 scheduler_name: str | None = None,
+                 scheduler_param: dict | None = None):
         """
         Args:
             vertices: 각도 텐서 (theta, phi) 형태의 (N, 2) 텐서
@@ -70,6 +72,8 @@ class TorchOptimizer(OptimizerBase):
             hyper_param: optimizer 하이퍼파라미터 딕셔너리
             max_iter: 최대 반복 횟수
             tolerance: 수렴 판단 기준
+            scheduler_name: 스케줄러 이름
+            scheduler_param: 스케줄러 하이퍼파라미터 딕셔너리
         """
 
         optimizer_factory = make_torch_factory(optim_name, hyper_param if hyper_param is not None else {})
@@ -82,7 +86,9 @@ class TorchOptimizer(OptimizerBase):
             objective=length_angles,
             optimizer_factory=optimizer_factory,
             max_iter=max_iter,
-            tolerance=tolerance
+            tolerance=tolerance,
+            scheduler_name=scheduler_name,
+            scheduler_params=scheduler_param
         )
 
     def post_step(self):
@@ -109,4 +115,3 @@ class TorchOptimizer(OptimizerBase):
 
             # --- phi를 [0, 2pi) 범위로 mod 변환 ---------------------------------
             phi.remainder_(2 * torch.pi)
-

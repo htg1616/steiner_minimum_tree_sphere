@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Callable, Union
+from typing import Callable, Union, Optional, Any
 import torch
+
+from .scheduler import make_scheduler
 
 
 class OptimizerBase:
@@ -10,7 +12,9 @@ class OptimizerBase:
         edge_index: torch.Tensor, steiner_mask: torch.Tensor,
         objective: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
         optimizer_factory: Callable[[torch.nn.Parameter], torch.optim.Optimizer],  # 생성자 콜백
-        max_iter: int = 10000, tolerance: float = 1e-6
+        max_iter: int = 10000, tolerance: float = 1e-6,
+        scheduler_name: str | None = None,
+        scheduler_params: dict | None = None
     ) -> None:
         # 입력 검증
         assert vertices.device == edge_index.device == steiner_mask.device, "모든 텐서는 동일 디바이스에 있어야 합니다."
@@ -41,7 +45,13 @@ class OptimizerBase:
         #optimizer 초기화
         self.optimizer = optimizer_factory(self.train_param)
 
-        #
+        scheduler, needs_loss = make_scheduler(
+            scheduler_name, self.optimizer,
+            total_steps=max_iter, params=scheduler_params
+        )
+        self.scheduler = scheduler
+        self._sched_needs_loss = needs_loss
+
         self.max_iter = max_iter
         self.tolerance = tolerance
 
@@ -87,6 +97,13 @@ class OptimizerBase:
 
             self.optimizer.step()
             self.post_step()
+
+            # 스케줄러 스텝
+            if self._sched_needs_loss:
+                self.scheduler.step(loss.item())
+            else:
+                self.scheduler.step()
+
         return loss.detach(), loss_history
 
     def post_step(self) -> None:

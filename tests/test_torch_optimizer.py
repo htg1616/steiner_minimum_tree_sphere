@@ -217,3 +217,24 @@ class TestTorchOptimizer:
         updated_vertices = optimizer.updated_full()
         assert torch.isfinite(updated_vertices).all(), \
             "업데이트된 좌표에 무한대 또는 NaN 값이 있습니다"
+
+    @pytest.mark.parametrize("scheduler_name, scheduler_param", [
+        ("cosine", {"eta_min": 0.0}),
+        ("plateau", {"patience": 1, "factor": 0.5}),
+        (None, None),
+    ])
+    def test_scheduler(self, simple_graph_data, scheduler_name, scheduler_param):
+        vertices, edge_index, steiner_mask = simple_graph_data
+        optz = TorchOptimizer(
+            vertices=vertices,
+            edge_index=edge_index,
+            steiner_mask=steiner_mask,
+            optim_name="adam",
+            hyper_param={"lr": 0.01},
+            max_iter=8,
+            scheduler_name=scheduler_name,
+            scheduler_param=scheduler_param,
+        )
+        final_loss, hist = optz.run()
+        assert torch.isfinite(final_loss)
+        assert all(math.isfinite(x) for x in hist)
