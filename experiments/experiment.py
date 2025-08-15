@@ -16,6 +16,7 @@ from graph.enums import InsertionMode
 from graph.mst import MinimalSpanningTree
 from graph.local_opt import make_local_optimizer
 from graph.steiner import SteinerTree
+from optimizer.early_stopper import EarlyStopConfig, EarlyStopper
 
 INPUT_BASE = os.path.join(PROJECT_ROOT, "data", "inputs")
 OUTPUT_BASE = os.path.join(PROJECT_ROOT, "data", "outputs")
@@ -38,13 +39,34 @@ def test_case(dots: list[Dot], exp_config: dict) -> dict:
     smt = SteinerTree(mst, insertion_mode)
     smt_len = smt.length()
 
-    # 지역 최적화
-    optimizer = make_local_optimizer(backend=exp_config["backend"], steiner_tree=smt,
-                                     optim_name=exp_config["optimizer_name"],
-                                     optim_param=exp_config["optimizer_params"], max_iter=exp_config["max_iterations"],
-                                     scheduler_name=exp_config["scheduler_name"], scheduler_param=exp_config["scheduler_params"],
-                                     tolerance=exp_config["tolerance"], device=exp_config["device"])
-    
+    # 스타이너 점이 0개인 경우 지역최적화를 건너뛰고 SMT 길이를 그대로 반환
+    if smt.steiner_count == 0:
+        return {
+            "mst_length": mst_len,
+            "smt_length": smt_len,
+            "opt_smt_length": smt_len,  # 최적화 없이 SMT 길이 그대로
+            "opt_smt_curve": [smt_len],  # 단일 값 리스트
+            "optimization_iterations": 0  # 최적화 실행 안함
+        }
+
+    # EarlyStopper 인스턴스 생성 (없으면 비활성)
+    early_cfg = EarlyStopConfig.from_dict(exp_config.get("early_stop", {}))
+    early_stopper = EarlyStopper(early_cfg)
+
+    # nested 구조로 변경된 설정 사용
+    optimizer = make_local_optimizer(
+        backend=exp_config["backend"],
+        steiner_tree=smt,
+        optim_name=exp_config["optimizer"]["name"],
+        optim_param=exp_config["optimizer"].get("params", {}),
+        max_iter=exp_config["max_iterations"],
+        scheduler_name=exp_config["scheduler"]["name"],
+        scheduler_param=exp_config["scheduler"].get("params", {}),
+        tolerance=exp_config["tolerance"],
+        device=exp_config["device"],
+        early_stopper=early_stopper,  # ← 주입
+    )
+
     # 최적화 실행
     final_loss, loss_history = optimizer.run()
 
@@ -76,9 +98,12 @@ def run_experiments(num_dots: list[int], num_tests: int, exp_config: dict):
             continue
 
         os.makedirs(out_dir, exist_ok=True)
-        logging.info(f"[실험 시작] {subdir} - backend={exp_config['backend']} - "
-                    f"optimizer={exp_config['optimizer_name']} - "
-                    f"max_iter={exp_config['max_iterations']}")
+        logging.info(
+            f"[실험 시작] {subdir} - backend={exp_config['backend']} - "
+            f"optimizer={exp_config['optimizer']['name']} - "
+            f"scheduler={exp_config['scheduler']['name']} - "
+            f"max_iter={exp_config['max_iterations']}"
+        )
 
         # 각 테스트 케이스 파일에 tqdm 적용
         for i in tqdm(range(1, num_tests + 1), desc=f"{num_dot} dots 처리중"):
@@ -127,10 +152,12 @@ def main():
 
     # CLI 옵션으로 experiment config 조정 가능
     parser = argparse.ArgumentParser(description="Geodesic Steiner Tree 실험 스크립트")
-    parser.add_argument("-b", "--backend", type=str, default=exp_cfg["backend"],
+    parser.add_argument("-b", "--backend", type=str, default=exp_cfg.get("backend", "geo"),
                   help="최적화 백엔드 (예: torch, numpy)")
-    parser.add_argument("-o", "--optimizer", type=str, default=exp_cfg["optimizer_name"],
+    parser.add_argument("-o", "--optimizer", type=str, default=exp_cfg["optimizer"]["name"],
                         help="옵티마이저 이름")
+    parser.add_argument("-s", "--scheduler", type=str, default=exp_cfg["scheduler"]["name"],
+                        help="스케줄러 이름")
     parser.add_argument("-i", "--insertion_mode", type=str, default=exp_cfg["insertion_mode"],
                         help="삽입 모드 (NORMAL, GREEDY, RANDOM)")
     parser.add_argument("-m", "--max_iterations", type=int, default=exp_cfg["max_iterations"],
@@ -139,8 +166,11 @@ def main():
 
     # CLI 인자로 실험 설정 업데이트
     exp_cfg["backend"] = args.backend
-    exp_cfg["optimizer_name"] = args.optimizer
+    exp_cfg["optimizer"]["name"] = args.optimizer
+    exp_cfg["scheduler"]["name"] = args.scheduler
     exp_cfg["insertion_mode"] = args.insertion_mode
+    exp_cfg["max_iterations"] = args.max_iterations
+
     run_experiments(num_dots, num_tests, exp_cfg)
 
 

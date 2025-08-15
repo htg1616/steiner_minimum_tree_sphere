@@ -3,7 +3,7 @@ from typing import Callable, Union, Optional, Any
 import torch
 
 from .scheduler import make_scheduler
-
+from .early_stopper import EarlyStopper
 
 class OptimizerBase:
     """Steiner 정점만 업데이트하는 공통 최적화 루프."""
@@ -55,6 +55,9 @@ class OptimizerBase:
         self.max_iter = max_iter
         self.tolerance = tolerance
 
+        # 외부에서 주입될 수 있는 EarlyStopper (옵션)
+        self.early_stopper: Optional[EarlyStopper] = None
+
     def _create_train_param(self) -> torch.nn.Parameter:
         """학습 가능한 파라미터 생성. 서브클래스에서 오버라이드 가능"""
         return torch.nn.Parameter(self.vertices[self.steiner_mask].clone())
@@ -85,24 +88,47 @@ class OptimizerBase:
         """최적화를 수행하고 최종 loss(detach) 를 반환한다."""
         loss_history = []
 
-        for _ in range(self.max_iter):
+        # early stopper 시작
+        if self.early_stopper is not None:
+            self.early_stopper.begin()
+
+        for step in range(self.max_iter):
             self.optimizer.zero_grad()
             loss = self.objective(self._assemble_full(), self.edge_index)
-            loss_history.append(loss.detach().item())
+            loss_val = loss.detach().item()
+            loss_history.append(loss_val)
             loss.backward()
 
             grad = self.train_param.grad
+            # min_iter 이전에는 grad-기반 종료를 막아 워밍업 보장
             if grad is not None and grad.norm() < self.tolerance:
-                break
+                if (self.early_stopper is None) or (step >= self.early_stopper.cfg.min_iter):
+                    # 종료 전 최선 파라미터 복원
+                    if self.early_stopper is not None:
+                        self.early_stopper.restore_if_needed(self.train_param)
+                    break
+
+            # 업데이트 크기 측정용 스냅샷
+            if self.early_stopper is not None:
+                self.early_stopper.on_pre_step(self.train_param)
 
             self.optimizer.step()
             self.post_step()
 
             # 스케줄러 스텝
             if self._sched_needs_loss:
-                self.scheduler.step(loss.item())
+                self.scheduler.step(loss_val)
             else:
                 self.scheduler.step()
+
+            # 조기 종료 판단
+            if self.early_stopper is not None:
+                cur_lrs = [pg["lr"] for pg in self.optimizer.param_groups]
+                stop, reason = self.early_stopper.on_post_step(step, loss_val, self.train_param, cur_lrs)
+                if stop:
+                    self.early_stopper.restore_if_needed(self.train_param)
+                    # print(f"[EarlyStop] step={step}, reason={reason}, best={self.early_stopper.best:.8f}")
+                    break
 
         return loss.detach(), loss_history
 

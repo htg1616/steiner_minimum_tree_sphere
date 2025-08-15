@@ -1,12 +1,15 @@
 import torch
 
+from .steiner import SteinerTree
 from optimizer.geo_optimizer import GeoOptimizer
 from optimizer.torch_optimizer import TorchOptimizer
 
 
-def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_param: dict | None = None,
-                         scheduler_name: str = None, scheduler_param: dict = None, max_iter: int = 10000, tolerance: float = 1e-6,
-                         device: str | torch.device = "cpu"):
+def make_local_optimizer(backend: str, steiner_tree: SteinerTree, optim_name: str, optim_param: dict | None = None,
+                         scheduler_name: str = None, scheduler_param: dict = None,
+                         max_iter: int = 10000, tolerance: float = 1e-6,
+                         device: str | torch.device = "cpu",
+                         early_stopper=None):
     """
     로컬 최적화기를 생성하는 팩토리 함수
 
@@ -20,6 +23,7 @@ def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_para
         max_iter: 최대 반복 횟수
         tolerance: 수렴 판단 기준
         device: 연산 장치 ('cpu', 'cuda' 등)
+        early_stopper: EarlyStopper 인스턴스 (옵션)
 
     Returns:
          optimizer 객체 (TorchOptimizer 또는 GeoOptimizer)
@@ -29,7 +33,7 @@ def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_para
 
     if backend.lower() == "torch":
         verts = steiner_tree.get_vertices_angle_tensor(device)
-        return TorchOptimizer(
+        opt = TorchOptimizer(
             vertices=verts,
             edge_index=edges,
             steiner_mask=mask,
@@ -40,9 +44,12 @@ def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_para
             scheduler_name=scheduler_name,
             scheduler_param=scheduler_param
         )
+        if early_stopper is not None:
+            opt.early_stopper = early_stopper
+        return opt
     elif backend.lower() == "geo":
         verts = steiner_tree.get_vertices_xyz_tensor(device)
-        return GeoOptimizer(
+        opt = GeoOptimizer(
             vertices=verts,
             edge_index=edges,
             steiner_mask=mask,
@@ -53,6 +60,9 @@ def make_local_optimizer(backend: str, steiner_tree, optim_name: str, optim_para
             scheduler_name=scheduler_name,
             scheduler_param=scheduler_param
         )
+        if early_stopper is not None:
+            opt.early_stopper = early_stopper
+        return opt
 
     else:
         raise ValueError(f"Unknown backend: {backend}")

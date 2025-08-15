@@ -1,13 +1,40 @@
 {
   "backend": "geo",
-  "optimizer_name": "radam",
-  "optimizer_params": {
-    "lr" : 5e-3, "betas" : [0.9, 0.9995], "eps": 1e-8, "weight_decay" : 1e-5
-  },
-  "scheduler_name": "cosine_hold",
-  "scheduler_params": {"decay_steps": 100, "eta_min": 5e-5},
+  "device": "cpu",
+  "insertion_mode": "decrease_only",
+
   "max_iterations": 1000,
   "tolerance": 1e-6,
-  "device": "cpu",
-  "insertion_mode": "decrease_only"
+
+  "optimizer": {
+    "name": "radam",
+    "params": { "lr": 0.005, "betas": [0.9, 0.9995], "eps": 1e-8, "weight_decay": 1e-5 }
+  },
+
+  "scheduler": {
+    "name": "cosine_hold",
+    "params": { "decay_steps": 100, "eta_min": 5e-5 }
+  },
+
+  "early_stop": {
+    "min_iter": 50,
+    "time_budget_sec": null,
+
+    "early_patience": 100,
+    "early_rel_tol": 5e-5,
+    "early_abs_tol": 0.0,
+
+    "update_tol": 1e-6,
+    "update_patience": 5,
+
+    "lr_floor": 1e-7,
+    "lr_patience": 100,
+
+    "stable_window": 0,
+    "stable_eps": 1e-6,
+
+    "div_factor": 10.0,
+    "restore_best": true
+  }
+
 }
