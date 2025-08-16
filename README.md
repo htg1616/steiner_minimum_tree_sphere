@@ -33,6 +33,7 @@ This will install the necessary packages listed in `requirements.txt`. Key depen
 - Geoopt (for Riemannian optimization on the sphere)
 - NumPy (for basic numeric operations)
 - tqdm (for progress bars during experiments)
+- pandas (for experiments data)
 - Matplotlib (optional, for visualization scripts)
 - pytest (optional, if you want to run the test suite)
 
