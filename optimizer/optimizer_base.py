@@ -57,6 +57,10 @@ class OptimizerBase:
 
         # 외부에서 주입될 수 있는 EarlyStopper (옵션)
         self.early_stopper: Optional[EarlyStopper] = None
+        self.last_early_stop_reason = None
+
+        # loss 값중 최소값
+        self.min_loss = float("inf")
 
     def _create_train_param(self) -> torch.nn.Parameter:
         """학습 가능한 파라미터 생성. 서브클래스에서 오버라이드 가능"""
@@ -106,6 +110,7 @@ class OptimizerBase:
                     # 종료 전 최선 파라미터 복원
                     if self.early_stopper is not None:
                         self.early_stopper.restore_if_needed(self.train_param)
+                    self.last_early_stop_reason = "grad_tol"
                     break
 
             # 업데이트 크기 측정용 스냅샷
@@ -127,9 +132,13 @@ class OptimizerBase:
                 stop, reason = self.early_stopper.on_post_step(step, loss_val, self.train_param, cur_lrs)
                 if stop:
                     self.early_stopper.restore_if_needed(self.train_param)
-                    # print(f"[EarlyStop] step={step}, reason={reason}, best={self.early_stopper.best:.8f}")
+                    self.last_early_stop_reason = reason
                     break
 
+        if self.last_early_stop_reason is None:
+            self.last_early_stop_reason = "max_iter"
+
+        self.min_loss = min(loss_history)
         return loss.detach(), loss_history
 
     def post_step(self) -> None:

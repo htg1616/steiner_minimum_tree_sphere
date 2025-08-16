@@ -1,6 +1,7 @@
 geoopt==0.5.1
 matplotlib==3.10.5
 numpy==2.3.2
+pandas==2.2.3
 pytest==8.4.1
 torch==2.8.0
 tqdm==4.67.1
